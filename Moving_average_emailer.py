@@ -5,7 +5,6 @@ from email.message import EmailMessage
 import yfinance as yf # pip isntall yfinance
 from datetime import datetime
 
-
 NUM_MA_DAYS = 100 # Number of days to be included in the simple moving average
 
 # Load environment variables from .env file
@@ -21,33 +20,27 @@ def load_environment_variables(env_file=".env"):
     except FileNotFoundError:
         raise FileNotFoundError(f"{env_file} file not found. Please ensure it exists in the script directory.")
 
-def moving_avg_status(ticker1, ticker2, period, moving_avg_days):
+def moving_avg_status(ticker1, period, moving_avg_days):
     # Fetch stock info
     try:
         indx1 = yf.Ticker(ticker1) # ^GSPC = S&P500, ^NDX = NASDAQ, ^DJI = Dow Jones
-        indx2 = yf.Ticker(ticker2) # ^GSPC = S&P500, ^NDX = NASDAQ, ^DJI = Dow Jones
         indx1_data = indx1.history(period = period) # Index data to track, '1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max'
-        indx2_data = indx2.history(period = period) # Index data to track
         indx1_data['MA'] = indx1_data['Close'].rolling(window=moving_avg_days).mean()
-        indx2_data['MA'] = indx2_data['Close'].rolling(window=moving_avg_days).mean()
-        spy_above = indx1_data['Close'].iloc[-1] > indx1_data['MA'].iloc[-1]
-        ndx_above = indx2_data['Close'].iloc[-1] > indx2_data['MA'].iloc[-1]
-        spy_above_y = indx1_data['Close'].iloc[-2] > indx1_data['MA'].iloc[-2]
-        ndx_above_y = indx2_data['Close'].iloc[-2] > indx2_data['MA'].iloc[-2]
-        return spy_above, ndx_above, spy_above_y, ndx_above_y
+        ticker_above = indx1_data['Close'].iloc[-1] > indx1_data['MA'].iloc[-1]
+        ticker_above_y = indx1_data['Close'].iloc[-2] > indx1_data['MA'].iloc[-2]
+        return ticker_above, ticker_above_y
         
     except Exception as e:
         print(f"Error in moving_avg_status: {e}")
         return None, None, None, None
 
-def create_msg(spy, ndx):
+def create_msg(ticker, ticker_above):
     try:
-        if spy is None or ndx is None:
+        if ticker_above is None:
              raise ValueError("Invalid input: None Type detected where boolean was expected.")
         msg = ''
-        spy_stat = 'ABOVE' if spy else 'BELOW'
-        ndx_stat = 'ABOVE' if ndx else 'BELOW'
-        msg = "S&P500 IS TRADING " + spy_stat + ' ' + str(NUM_MA_DAYS) +" DAY MOVING AVERAGE. \n" + "NASDAQ IS TRADING " + ndx_stat + ' ' + str(NUM_MA_DAYS) +" DAY MOVING AVERAGE.\n"
+        ticker_stat = 'ABOVE' if ticker_above else 'BELOW'
+        msg = ticker + " IS " + ticker_stat + "\n"
         return msg
     except ValueError as e:
         print(f"Error in create_msg: {e}")
@@ -74,30 +67,33 @@ def send_email(
 
 def main():
     load_environment_variables()
-    ticker1 = '^GSPC' # ^GSPC = S&P500, ^NDX = NASDAQ, ^DJI = Dow Jones
-    ticker2 = '^NDX' 
+    tickers = ('^GSPC', '^NDX', 'TSLA', 'NVDA', 'TD', 'BITF.TO', 'WOLF') # ^GSPC = S&P500, ^NDX = NASDAQ, ^DJI = Dow Jones
     period = '2y'
     moving_avg_days = NUM_MA_DAYS
+    moving_avg_message = ''
     
     # Retrieve sensitive data
     sender = os.getenv("EMAIL_SENDER")
     password = os.getenv("EMAIL_PASSWORD")
     SMTP_SERVER = "smtp.gmail.com"
     SMTP_PORT = 587
-    SPY_status, NDX_status, SPY_stat_y, NDX_stat_y = moving_avg_status(ticker1, ticker2, period, moving_avg_days)
+    tickers_statuses = [] # list of tuples
+    for ticker in tickers:
+        tickers_statuses.append(moving_avg_status(ticker, period, moving_avg_days))
     today = datetime.now().weekday() # Check if saturday for check-in
-    if SPY_status != SPY_stat_y or NDX_status != NDX_stat_y:
-        moving_avg_message = create_msg(SPY_status, NDX_status)
-        if (today == 5): 
-            moving_avg_message = "Saturday check in, everything is still connected. \n" + moving_avg_message
-    else: 
-        print("No change in moving average side, terminating program")
+    if (today == 5): 
+        moving_avg_message = "Saturday check in, everything is still connected. \n\n"
+    for iter, stat in enumerate(tickers_statuses):
+        # if stat[0] != stat[1]: # 0 for today MA status, 1 for yesterday MA status
+            moving_avg_message += create_msg(tickers[iter], stat[0])     
+    if(moving_avg_message == ''): 
+        print("No change in moving average side for any stocks or indices, terminating program")
         return
 
     # Create the email body with separated sections
     message_body = (
         "Good morning! Here's your update:\n\n"
-        "---- MOVING AVERAGE REPORT ----\n\n"
+        "---- " + str(NUM_MA_DAYS) + " DAY MOVING AVERAGE REPORT ----\n\n"
         f"{moving_avg_message}\n"
     )
 
