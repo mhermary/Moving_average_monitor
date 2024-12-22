@@ -4,6 +4,8 @@ import smtplib
 from email.message import EmailMessage
 import yfinance as yf # pip isntall yfinance
 
+NUM_MA_DAYS = 100 # Number of days to be included in the simple moving average
+
 # Load environment variables from .env file
 def load_environment_variables(env_file=".env"):
     """Load environment variables from a .env file."""
@@ -16,13 +18,11 @@ def load_environment_variables(env_file=".env"):
                     os.environ[key] = value
     except FileNotFoundError:
         raise FileNotFoundError(f"{env_file} file not found. Please ensure it exists in the script directory.")
-
-    
     
 def get_moving_avg():
     # Fetch stock info
     try:
-        moving_avg_days = 100
+        moving_avg_days = NUM_MA_DAYS
         ticker1 = '^GSPC' # ^GSPC = S&P500, ^NDX = NASDAQ, ^DJI = Dow Jones
         ticker2 = '^NDX' 
         period = '2y'
@@ -73,7 +73,6 @@ def send_email(
     except Exception as e:
         return f"Failed to send email. Error: {e}"
 
-
 def main():
     load_environment_variables()
 
@@ -102,7 +101,6 @@ def main():
         password=password,
     )
     print(email_status)
-
 
 if __name__ == "__main__":
     main()
