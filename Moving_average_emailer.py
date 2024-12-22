@@ -18,12 +18,6 @@ def load_environment_variables(env_file=".env"):
                     os.environ[key] = value
     except FileNotFoundError:
         raise FileNotFoundError(f"{env_file} file not found. Please ensure it exists in the script directory.")
-    
-def compare_moving_avg():
-    #compares moving average to day before so emails are only sent on crossing of the moving average
-    cross_mov_avg_status = False
-    
-    return cross_mov_avg_status
 
 def moving_avg_status(ticker1, ticker2, period, moving_avg_days):
     # Fetch stock info
@@ -43,7 +37,6 @@ def moving_avg_status(ticker1, ticker2, period, moving_avg_days):
     except Exception as e:
         print(f"Error in moving_avg_status: {e}")
         return None, None, None, None
-
 
 def create_msg(spy, ndx):
     try:
