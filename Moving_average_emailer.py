@@ -3,6 +3,8 @@ import os
 import smtplib
 from email.message import EmailMessage
 import yfinance as yf # pip isntall yfinance
+from datetime import datetime
+
 
 NUM_MA_DAYS = 100 # Number of days to be included in the simple moving average
 
@@ -83,8 +85,11 @@ def main():
     SMTP_SERVER = "smtp.gmail.com"
     SMTP_PORT = 587
     SPY_status, NDX_status, SPY_stat_y, NDX_stat_y = moving_avg_status(ticker1, ticker2, period, moving_avg_days)
+    today = datetime.now().weekday() # Check if saturday for check-in
     if SPY_status != SPY_stat_y or NDX_status != NDX_stat_y:
         moving_avg_message = create_msg(SPY_status, NDX_status)
+        if (today == 5): 
+            moving_avg_message = "Saturday check in, everything is still connected. \n" + moving_avg_message
     else: 
         print("No change in moving average side, terminating program")
         return
