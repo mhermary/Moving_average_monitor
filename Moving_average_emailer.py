@@ -2,8 +2,9 @@
 import os
 import smtplib
 from email.message import EmailMessage
-import yfinance as yf # pip isntall yfinance
+import yfinance as yf # pip install yfinance
 from datetime import datetime
+from ta.momentum import RSIIndicator
 
 NUM_MA_DAYS = 100 # Number of days to be included in the simple moving average
 
@@ -29,33 +30,29 @@ def moving_avg_status(ticker1, period, moving_avg_days):
         ticker_above = indx1_data['Close'].iloc[-1] > indx1_data['MA'].iloc[-1]
         ticker_above_y = indx1_data['Close'].iloc[-2] > indx1_data['MA'].iloc[-2]
         return ticker_above, ticker_above_y
+    #ticker above can be compared to ticker above y to check for a crossover.
         
     except Exception as e:
         print(f"Error in moving_avg_status: {e}")
         return None, None, None, None
 
-def create_msg(ticker, ticker_above):
-    try:
-        if ticker_above is None:
-             raise ValueError("Invalid input: None Type detected where boolean was expected.")
-        msg = ''
-        ticker_stat = 'ABOVE' if ticker_above else 'BELOW'
-        msg = ticker + " IS " + ticker_stat + "\n"
-        return msg
-    except ValueError as e:
-        print(f"Error in create_msg: {e}")
-        return f"Error in create_msg: {e}"
+def RSI_status(RSI_ticker):
+    RSI_data = yf.download(tickers=RSI_ticker, period='5d', interval='5m')
+    closeValues = RSI_data['Close'].squeeze()
+    rsi_14 = RSIIndicator(close=closeValues, window=14) # window = num days for RSI
+    RSI_series = rsi_14.rsi()
+    RSI_day = RSI_series.iloc[-1]
+    return RSI_day
 
 def send_email(
-    sender, recipient, subject, message_body, smtp_server, smtp_port, password
+    email, sender, recipient, subject, smtp_server, smtp_port, password
 ):
     """Send an email using the specified SMTP server and login credentials."""
     try:
-        email = EmailMessage()
+        email = email
         email["From"] = sender
         email["To"] = recipient
-        email["Subject"] = subject
-        email.set_content(message_body)     
+        email["Subject"] = subject   
 
         with smtplib.SMTP(smtp_server, port=smtp_port) as smtp:
             smtp.starttls()
@@ -64,50 +61,84 @@ def send_email(
         return "Email sent successfully."
     except Exception as e:
         return f"Failed to send email. Error: {e}"
+    
+def create_table(tickers, ma_statuses, rsi_values):
+    # Define header with column widths
+    header = f"{'Ticker':<8} | {'MA Status':<9} | {'RSI':<6}\n"
+    separator = "-" * (8 + 3 + 9 + 3 + 6) + "\n"  # length matches header
+    table_str = header + separator    
+    for i, ticker in enumerate(tickers):
+        ma_stat = "ABOVE" if ma_statuses[i][0] else "BELOW"
+        rsi_val = rsi_values[i]
+        table_str += f"{ticker:<8} \t MA: {ma_stat:<6} \t RSI: {rsi_val:5.2f}\n"
+    return table_str
 
 def main():
     load_environment_variables()
-    tickers = ('^GSPC', '^NDX', 'TSLA', 'NVDA', 'TD', 'BITF.TO', 'WOLF') # ^GSPC = S&P500, ^NDX = NASDAQ, ^DJI = Dow Jones
+    today = datetime.now().weekday()
+    if (today == 5 or today == 6): 
+        return # market info not needed on weekends
+    tickers = ('^GSPC', '^NDX', '^DJI', '^DJT', 'AAPL', 'AMZN', 'GOOG', 'MSFT', 'NVDA', 'TSLA', 'BTC-CAD') # ^GSPC = S&P500, ^NDX = NASDAQ, ^DJI = Dow Jones
+    RSI_tickers = tickers
     period = '2y'
     moving_avg_days = NUM_MA_DAYS
-    moving_avg_message = ''
-    
     # Retrieve sensitive data
     sender = os.getenv("EMAIL_SENDER")
     password = os.getenv("EMAIL_PASSWORD")
     SMTP_SERVER = "smtp.gmail.com"
     SMTP_PORT = 587
     tickers_statuses = [] # list of tuples
+    RSI_statuses = []
+    email = EmailMessage()
+
     for ticker in tickers:
         tickers_statuses.append(moving_avg_status(ticker, period, moving_avg_days))
-    today = datetime.now().weekday() # Check if saturday for check-in
-    if (today == 5): 
-        moving_avg_message = "Saturday check in, everything is still connected. \n\n"
-    for iter, stat in enumerate(tickers_statuses):
-        # if stat[0] != stat[1]: # 0 for today MA status, 1 for yesterday MA status
-            moving_avg_message += create_msg(tickers[iter], stat[0])     
-    if(moving_avg_message == ''): 
-        print("No change in moving average side for any stocks or indices, terminating program")
-        return
+    for ticker in RSI_tickers :
+        RSI_statuses.append(RSI_status(ticker))
 
-    # Create the email body with separated sections
-    message_body = (
+    table = create_table(tickers, tickers_statuses, RSI_statuses)
+
+    email.set_content(
         "Good morning! Here's your update:\n\n"
-        "---- " + str(NUM_MA_DAYS) + " DAY MOVING AVERAGE REPORT ----\n\n"
-        f"{moving_avg_message}\n"
+        f"--- {NUM_MA_DAYS} DAY MOVING AVG & RSI REPORT ---\n\n"
+        f"\n{table}"
     )
 
-    # Send the email to the sender
+    html_table = "".join(
+        f"<tr><td>{ticker}</td><td>{'ABOVE' if ma[0] else 'BELOW'}</td><td>{rsi:.2f}</td></tr>"
+        for ticker, ma, rsi in zip(tickers, tickers_statuses, RSI_statuses)
+    )
+
+    html = f"""
+    <html>
+    <body>
+        <h2>Morning Market Update 📈</h2>
+        <p><b>{NUM_MA_DAYS}-Day Moving Average & RSI Report</b></p>
+        <table border="1" cellpadding="6" cellspacing="0">
+        <tr>
+            <th>Ticker</th><th>MA Status</th><th>RSI</th>
+        </tr>
+        {html_table}
+        </table>
+    </body>
+    </html>
+    """
+    email.add_alternative(html, subtype='html')
+
+
+    # Send email
     email_status = send_email(
+        email=email,
         sender=sender,
         recipient=sender,  # sending email to myself
         subject="Morning Market Update 🚀",
-        message_body=message_body,
         smtp_server=SMTP_SERVER,
         smtp_port=SMTP_PORT,
         password=password,
     )
     print(email_status)
+
+    # print(message_body)
 
 if __name__ == "__main__":
     main()
