@@ -1,3 +1,3 @@
 # Moving_average_monitor
 
-Sends an email whenever the moving average of certain stock indices are trading below their 100 day moving averages
+Sends an email every weekday covering the moving average status of certain stocks and indices as well as their RSIs
