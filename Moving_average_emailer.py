@@ -38,7 +38,7 @@ def moving_avg_status(ticker1, period, moving_avg_days):
         return None, None, None, None
 
 def RSI_status(RSI_ticker):
-    RSI_data = yf.download(tickers=RSI_ticker, period='5d', interval='5m')
+    RSI_data = yf.download(tickers=RSI_ticker, period='5d', interval='5m', auto_adjust=True, progress=False)
     closeValues = RSI_data['Close'].squeeze()
     rsi_14 = RSIIndicator(close=closeValues, window=14) # window = num days for RSI
     RSI_series = rsi_14.rsi()
