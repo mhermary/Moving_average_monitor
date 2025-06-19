@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# remove this command when running as a taks on PythonAnywhere
 import os
 import smtplib
 from email.message import EmailMessage
