@@ -98,7 +98,24 @@ def send_email(
             smtp.send_message(email)
         return "Email sent successfully."
     except Exception as e:
-        return f"Failed to send email. Error: {e}"
+                print(f"Failed to send HTML email. Error: {e}")
+        print("Retrying with plain text only...")
+
+        # Rebuild plain-text-only email
+        fallback_email = EmailMessage()
+        fallback_email["From"] = sender
+        fallback_email["To"] = recipient
+        fallback_email["Subject"] = subject
+        fallback_email.set_content(email.get_body(preferencelist=('plain')).get_content())
+
+        try:
+            with smtplib.SMTP(smtp_server, port=smtp_port, timeout=15) as smtp:
+                smtp.starttls()
+                smtp.login(sender, password)
+                smtp.send_message(fallback_email)
+            return "Plain text fallback email sent successfully."
+        except Exception as e2:
+            return f"Failed to send even fallback plain-text email. Error: {e2}"
     
 def create_table(tickers, ma_statuses, rsi_values):
     # Define header with column widths
