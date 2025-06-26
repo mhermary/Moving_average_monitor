@@ -109,7 +109,7 @@ def send_email(
         fallback_email.set_content(email.get_body(preferencelist=('plain')).get_content())
 
         try:
-            with smtplib.SMTP(smtp_server, port=smtp_port, timeout=15) as smtp:
+            with smtplib.SMTP(smtp_server, port=smtp_port) as smtp:
                 smtp.starttls()
                 smtp.login(sender, password)
                 smtp.send_message(fallback_email)
