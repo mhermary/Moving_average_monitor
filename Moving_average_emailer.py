@@ -98,7 +98,7 @@ def send_email(
             smtp.send_message(email)
         return "Email sent successfully."
     except Exception as e:
-                print(f"Failed to send HTML email. Error: {e}")
+        print(f"Failed to send HTML email. Error: {e}")
         print("Retrying with plain text only...")
 
         # Rebuild plain-text-only email
