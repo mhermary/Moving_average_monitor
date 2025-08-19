@@ -9,19 +9,6 @@ from ta.momentum import RSIIndicator
 
 NUM_MA_DAYS = 100 # Number of days to be included in the simple moving average
 
-# Load environment variables from .env file
-def load_environment_variables(env_file=".env"):
-    """Load environment variables from a .env file."""
-    try:
-        with open(env_file, "r") as file:
-            for line in file:
-                # Ignore comments and empty lines
-                if line.strip() and not line.startswith("#"):
-                    key, value = map(str.strip, line.split("=", 1))
-                    os.environ[key] = value
-    except FileNotFoundError:
-        raise FileNotFoundError(f"{env_file} file not found. Please ensure it exists in the script directory.")
-
 def moving_avg_status(ticker1, period, moving_avg_days):
     # Fetch stock info
     try:
@@ -130,7 +117,6 @@ def create_table(tickers, ma_statuses, rsi_values):
     return table_str
 
 def main():
-    load_environment_variables()
     today = datetime.now().weekday()
     if (today == 5 or today == 6): 
         return # market info not needed on weekends
