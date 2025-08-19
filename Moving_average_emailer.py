@@ -87,7 +87,6 @@ def send_email(
 ):
     """Send an email using the specified SMTP server and login credentials."""
     try:
-        email = email
         email["From"] = sender
         email["To"] = recipient
         email["Subject"] = subject   
@@ -116,6 +115,7 @@ def send_email(
             return "Plain text fallback email sent successfully."
         except Exception as e2:
             return f"Failed to send even fallback plain-text email. Error: {e2}"
+
     
 def create_table(tickers, ma_statuses, rsi_values):
     # Define header with column widths
