@@ -3,7 +3,7 @@ name: Run Daily Script
 on:
   schedule:
     # Runs every day at 9:00 UTC (adjust to your time)
-    - cron: "45 23 * * 1-5"
+    - cron: "55 00 * * 1-5"
   workflow_dispatch: # lets you run manually too
 
 jobs:
