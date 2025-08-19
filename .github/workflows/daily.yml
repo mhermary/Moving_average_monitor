@@ -1,0 +1,30 @@
+name: Run Daily Script
+
+on:
+  schedule:
+    # Runs every day at 9:00 UTC (adjust to your time)
+    - cron: "0 1 4 * *"
+  workflow_dispatch: # lets you run manually too
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    env:
+      EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
+      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run script
+        run: python Moving_average_emailer.py
+
