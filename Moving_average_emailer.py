@@ -120,7 +120,7 @@ def main():
     today = datetime.now().weekday()
     if (today == 5 or today == 6): 
         return # market info not needed on weekends
-    tickers = ('^GSPC', '^NDX', '^DJI', '^DJT', 'AAPL', 'AMZN', 'GOOG', 'MSFT', 'NVDA', 'TSLA', 'BTC-CAD') # ^GSPC = S&P500, ^NDX = NASDAQ, ^DJI = Dow Jones
+    tickers = ('^GSPC', '^NDX', '^DJI', 'FNG=F', 'AAPL', 'AMZN', 'GOOG', 'MSFT', 'NVDA', 'TSLA', 'BTC-CAD') # ^GSPC = S&P500, ^NDX = NASDAQ, FNG=F = FANG+, ^DJI = Dow Jones
     period = '2y'
     moving_avg_days = NUM_MA_DAYS
     # Retrieve sensitive data
