@@ -7,7 +7,7 @@ import yfinance as yf # pip install yfinance
 from datetime import datetime
 from ta.momentum import RSIIndicator
 
-NUM_MA_DAYS = 100 # Number of days to be included in the simple moving average
+NUM_MA_DAYS = 150 # Number of days to be included in the simple moving average
 
 def moving_avg_status(ticker1, period, moving_avg_days):
     # Fetch stock info
@@ -120,7 +120,7 @@ def main():
     today = datetime.now().weekday()
     if (today == 5 or today == 6): 
         return # market info not needed on weekends
-    tickers = ('^GSPC', '^NDX', '^DJI', 'FNG=F', 'AAPL', 'AMZN', 'GOOG', 'MSFT', 'NVDA', 'TSLA', 'BTC-CAD') # ^GSPC = S&P500, ^NDX = NASDAQ, FNG=F = FANG+, ^DJI = Dow Jones
+    tickers = ('^GSPC', '^NDX', '^DJI', 'FNG=F', 'AAPL', 'AMZN', 'GOOG', 'MSFT', 'MU', 'NVDA', 'SNDK', 'TSLA', 'BTC-CAD') # ^GSPC = S&P500, ^NDX = NASDAQ, FNG=F = FANG+, ^DJI = Dow Jones
     period = '2y'
     moving_avg_days = NUM_MA_DAYS
     # Retrieve sensitive data
